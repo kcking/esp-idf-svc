@@ -1,5 +1,6 @@
 use core::ptr;
 use core::slice;
+use core::str;
 use core::time;
 
 extern crate alloc;
@@ -343,7 +344,12 @@ impl<'a> client::Message for EspMessage<'a> {
     }
 
     fn topic(&self, _topic_token: &client::TopicToken) -> Cow<'_, str> {
-        Cow::Owned(from_cstr_ptr(self.event.topic).into_owned())
+        Cow::Borrowed(unsafe {
+            str::from_utf8_unchecked(slice::from_raw_parts(
+                (self.event.topic as *const u8).as_ref().unwrap(),
+                self.event.topic_len as _,
+            ))
+        })
     }
 
     fn details(&self) -> &client::Details {
